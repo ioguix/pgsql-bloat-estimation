@@ -1,18 +1,21 @@
 /* WARNING: executed with a non-superuser role, the query inspect only tables you are granted to read.
 * This query is compatible with PostgreSQL 9.0 and more
-* Changelog:
-*   * exclude inherited stats
 */
 SELECT current_database(), schemaname, tblname, bs*tblpages AS real_size,
   (tblpages-est_num_pages)*bs AS bloat_size, tblpages, is_na,
   CASE WHEN tblpages - est_num_pages > 0
     THEN 100 * (tblpages - est_num_pages)/tblpages::float
     ELSE 0
-  END AS bloat_ratio
+  END AS bloat_ratio, fillfactor,
+  CASE WHEN tblpages - est_fillfactor > 0
+    THEN 100 * (tblpages - est_fillfactor)/tblpages::float
+    ELSE 0
+  END AS bloat_ratio_fillfactor
   -- , (pst).free_percent + (pst).dead_tuple_percent AS real_frag
 FROM (
-  SELECT ceil( reltuples / ( (bs-page_hdr)/tpl_size ) ) + ceil( toasttuples / 4 ) AS est_num_pages, tblpages,
-    bs, tblid, schemaname, tblname, heappages, toastpages, is_na
+  SELECT ceil( reltuples / ( (bs-page_hdr)/tpl_size ) ) + ceil( toasttuples / 4 ) AS est_num_pages,
+    ceil( reltuples / ( (bs-page_hdr)*fillfactor/(tpl_size*100) ) ) + ceil( toasttuples / 4 ) AS est_fillfactor,
+    tblpages, fillfactor, bs, tblid, schemaname, tblname, heappages, toastpages, is_na
     -- , stattuple.pgstattuple(tblid) AS pst
   FROM (
     SELECT
@@ -20,12 +23,15 @@ FROM (
         - CASE WHEN tpl_hdr_size%ma = 0 THEN ma ELSE tpl_hdr_size%ma END
         - CASE WHEN ceil(tpl_data_size)::int%ma = 0 THEN ma ELSE ceil(tpl_data_size)::int%ma END
       ) AS tpl_size, bs - page_hdr AS size_per_block, (heappages + toastpages) AS tblpages, heappages,
-      toastpages, reltuples, toasttuples, bs, page_hdr, tblid, schemaname, tblname, is_na
+      toastpages, reltuples, toasttuples, bs, page_hdr, tblid, schemaname, tblname, fillfactor, is_na
     FROM (
       SELECT
         tbl.oid AS tblid, ns.nspname AS schemaname, tbl.relname AS tblname, tbl.reltuples,
         tbl.relpages AS heappages, coalesce(toast.relpages, 0) AS toastpages,
         coalesce(toast.reltuples, 0) AS toasttuples,
+        coalesce(substring(
+          array_to_string(tbl.reloptions, ' ')
+          FROM '%fillfactor=#"__#"%' FOR '#')::smallint, 100) AS fillfactor,
         current_setting('block_size')::numeric AS bs,
         CASE WHEN version()~'mingw32' OR version()~'64-bit|x86_64|ppc64|ia64|amd64' THEN 8 ELSE 4 END AS ma,
         24 AS page_hdr,
