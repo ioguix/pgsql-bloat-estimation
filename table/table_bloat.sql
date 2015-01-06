@@ -2,19 +2,19 @@
 * This query is compatible with PostgreSQL 9.0 and more
 */
 SELECT current_database(), schemaname, tblname, bs*tblpages AS real_size,
-  (tblpages-est_num_pages)*bs AS bloat_size, tblpages, is_na,
-  CASE WHEN tblpages - est_num_pages > 0
-    THEN 100 * (tblpages - est_num_pages)/tblpages::float
+  (tblpages-est_tblpages)*bs AS extra_size,
+  CASE WHEN tblpages - est_tblpages > 0
+    THEN 100 * (tblpages - est_tblpages)/tblpages::float
     ELSE 0
-  END AS bloat_ratio, fillfactor,
-  CASE WHEN tblpages - est_fillfactor > 0
-    THEN 100 * (tblpages - est_fillfactor)/tblpages::float
+  END AS extra_ratio, fillfactor, (tblpages-est_tblpages_ff)*bs AS bloat_size,
+  CASE WHEN tblpages - est_tblpages_ff > 0
+    THEN 100 * (tblpages - est_tblpages_ff)/tblpages::float
     ELSE 0
-  END AS bloat_ratio_fillfactor
+  END AS bloat_ratio, is_na
   -- , (pst).free_percent + (pst).dead_tuple_percent AS real_frag
 FROM (
-  SELECT ceil( reltuples / ( (bs-page_hdr)/tpl_size ) ) + ceil( toasttuples / 4 ) AS est_num_pages,
-    ceil( reltuples / ( (bs-page_hdr)*fillfactor/(tpl_size*100) ) ) + ceil( toasttuples / 4 ) AS est_fillfactor,
+  SELECT ceil( reltuples / ( (bs-page_hdr)/tpl_size ) ) + ceil( toasttuples / 4 ) AS est_tblpages,
+    ceil( reltuples / ( (bs-page_hdr)*fillfactor/(tpl_size*100) ) ) + ceil( toasttuples / 4 ) AS est_tblpages_ff,
     tblpages, fillfactor, bs, tblid, schemaname, tblname, heappages, toastpages, is_na
     -- , stattuple.pgstattuple(tblid) AS pst
   FROM (

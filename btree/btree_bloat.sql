@@ -1,12 +1,11 @@
 -- WARNING: executed with a non-superuser role, the query inspect only index on tables you are granted to read.
 -- WARNING: rows with is_na = 't' are known to have bad statistics ("name" type is not supported).
 -- This query is compatible with PostgreSQL 8.2 and after
-SELECT current_database(), nspname AS schemaname, tblname, idxname, bs*(sub.relpages)::bigint AS real_size,
-  bs*est_pages::bigint as estimated_size,
-  bs*(sub.relpages-est_pages)::bigint AS bloat_size,
-  100 * (sub.relpages-est_pages)::float / sub.relpages AS bloat_ratio,
-  fillfactor,
-  100 * (sub.relpages-est_pages_fillfactor)::float / sub.relpages AS bloat_ratio_fillfactor,
+SELECT current_database(), nspname AS schemaname, tblname, idxname, bs*(relpages)::bigint AS real_size,
+  bs*(relpages-est_pages)::bigint AS extra_size,
+  100 * (relpages-est_pages)::float / relpages AS extra_ratio,
+  fillfactor, bs*(relpages-est_pages_ff) AS bloat_size,
+  100 * (relpages-est_pages_ff)::float / relpages AS bloat_ratio,
   is_na
   -- , 100-(sub.pst).avg_leaf_density, est_pages, index_tuple_hdr_bm, maxalign, pagehdr, nulldatawidth, nulldatahdrwidth, sub.reltuples, sub.relpages -- (DEBUG INFO)
 FROM (
@@ -15,7 +14,7 @@ FROM (
     ) AS est_pages,
     coalesce(1 +
        ceil(reltuples/floor((bs-pageopqdata-pagehdr)*fillfactor/(100*(4+nulldatahdrwidth)::float))), 0
-    ) AS est_pages_fillfactor,
+    ) AS est_pages_ff,
     bs, nspname, table_oid, tblname, idxname, relpages, fillfactor, is_na
     -- , stattuple.pgstatindex(quote_ident(nspname)||'.'||quote_ident(idxname)) AS pst, index_tuple_hdr_bm, maxalign, pagehdr, nulldatawidth, nulldatahdrwidth, reltuples -- (DEBUG INFO)
   FROM (
