@@ -4,15 +4,22 @@
 SELECT current_database(), nspname AS schemaname, tblname, idxname, bs*(sub.relpages)::bigint AS real_size,
   bs*est_pages::bigint as estimated_size,
   bs*(sub.relpages-est_pages)::bigint AS bloat_size,
-  100 * (sub.relpages-est_pages)::float / sub.relpages AS bloat_ratio, is_na
+  100 * (sub.relpages-est_pages)::float / sub.relpages AS bloat_ratio,
+  fillfactor,
+  100 * (sub.relpages-est_pages_fillfactor)::float / sub.relpages AS bloat_ratio_fillfactor,
+  is_na
   -- , 100-(sub.pst).avg_leaf_density, est_pages, index_tuple_hdr_bm, maxalign, pagehdr, nulldatawidth, nulldatahdrwidth, sub.reltuples, sub.relpages -- (DEBUG INFO)
 FROM (
-  SELECT bs, nspname, table_oid, tblname, idxname, relpages, coalesce(
-      1+ceil(reltuples/floor((bs-pageopqdata-pagehdr)/(4+nulldatahdrwidth)::float)), 0 -- ItemIdData size + computed avg size of a tuple (nulldatahdrwidth)
-    ) AS est_pages, is_na
+  SELECT coalesce(1 +
+       ceil(reltuples/floor((bs-pageopqdata-pagehdr)/(4+nulldatahdrwidth)::float)), 0 -- ItemIdData size + computed avg size of a tuple (nulldatahdrwidth)
+    ) AS est_pages,
+    coalesce(1 +
+       ceil(reltuples/floor((bs-pageopqdata-pagehdr)*fillfactor/(100*(4+nulldatahdrwidth)::float))), 0
+    ) AS est_pages_fillfactor,
+    bs, nspname, table_oid, tblname, idxname, relpages, fillfactor, is_na
     -- , stattuple.pgstatindex(quote_ident(nspname)||'.'||quote_ident(idxname)) AS pst, index_tuple_hdr_bm, maxalign, pagehdr, nulldatawidth, nulldatahdrwidth, reltuples -- (DEBUG INFO)
   FROM (
-    SELECT maxalign, bs, nspname, tblname, idxname, reltuples, relpages, relam, table_oid,
+    SELECT maxalign, bs, nspname, tblname, idxname, reltuples, relpages, relam, table_oid, fillfactor,
       ( index_tuple_hdr_bm +
           maxalign - CASE -- Add padding to the index tuple header to align on MAXALIGN
             WHEN index_tuple_hdr_bm%maxalign = 0 THEN maxalign
@@ -28,7 +35,7 @@ FROM (
     FROM (
       SELECT
         i.nspname, i.tblname, i.idxname, i.reltuples, i.relpages, i.relam, a.attrelid AS table_oid,
-        current_setting('block_size')::numeric AS bs,
+        current_setting('block_size')::numeric AS bs, fillfactor,
         CASE -- MAXALIGN: 4 on 32bits, 8 on 64bits (and mingw32 ?)
           WHEN version() ~ 'mingw32' OR version() ~ '64-bit|x86_64|ppc64|ia64|amd64' THEN 8
           ELSE 4
@@ -48,7 +55,10 @@ FROM (
       FROM pg_attribute AS a
         JOIN (
           SELECT nspname, tbl.relname AS tblname, idx.relname AS idxname, idx.reltuples, idx.relpages, idx.relam,
-            indrelid, indexrelid, indkey::smallint[] AS attnum
+            indrelid, indexrelid, indkey::smallint[] AS attnum,
+            coalesce(substring(
+              array_to_string(idx.reloptions, ' ')
+               from 'fillfactor=([0-9]+)')::smallint, 90) AS fillfactor
           FROM pg_index
             JOIN pg_class idx ON idx.oid=pg_index.indexrelid
             JOIN pg_class tbl ON tbl.oid=pg_index.indrelid
