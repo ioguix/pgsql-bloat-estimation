@@ -53,7 +53,7 @@ FROM (
             JOIN pg_class idx ON idx.oid=pg_index.indexrelid
             JOIN pg_class tbl ON tbl.oid=pg_index.indrelid
             JOIN pg_namespace ON pg_namespace.oid = idx.relnamespace
-          WHERE tbl.relkind = 'r' 
+          WHERE tbl.relkind = 'r' AND idx.relpages > 0
         ) AS i ON a.attrelid = i.indexrelid
         JOIN pg_stats AS s ON s.schemaname = i.nspname
           AND ((s.tablename = i.tblname AND s.attname = pg_catalog.pg_get_indexdef(a.attrelid, a.attnum, TRUE)) -- stats from tbl
