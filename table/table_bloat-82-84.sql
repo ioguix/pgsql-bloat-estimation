@@ -37,19 +37,7 @@ FROM (
         24 AS page_hdr,
         23 + CASE WHEN MAX(coalesce(null_frac,0)) > 0 THEN ( 7 + count(*) ) / 8 ELSE 0::int END
           + CASE WHEN tbl.relhasoids THEN 4 ELSE 0 END AS tpl_hdr_size,
-        sum( (1-coalesce(s.null_frac, 0))
-          * coalesce(
-            CASE
-              WHEN t.typlen = -1 THEN
-                -- in 8.3+ varlen header is 4 unless length < 127 where it's 1
-                CASE WHEN s.avg_width < 127
-                  AND current_setting('server_version_num')::integer >= 80300
-                  THEN s.avg_width + 1 ELSE s.avg_width + 4
-                END
-              WHEN t.typlen = -2 THEN s.avg_width + 1
-              ELSE t.typlen
-            END
-          , 1024)) AS tpl_data_size,
+        sum( (1-coalesce(s.null_frac, 0)) * coalesce(s.avg_width, 1024) ) AS tpl_data_size,
         bool_or(att.atttypid = 'pg_catalog.name'::regtype) AS is_na
       FROM pg_attribute AS att
         JOIN pg_type AS t ON att.atttypid = t.oid

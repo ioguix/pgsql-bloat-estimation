@@ -33,15 +33,8 @@ FROM (
           ELSE 20
         END AS page_hdr,
         23 + CASE WHEN MAX(coalesce(null_frac,0)) > 0 THEN ( 7 + count(*) ) / 8 ELSE 0::int END
-            + CASE WHEN tbl.relhasoids THEN 4 ELSE 0 END AS tpl_hdr_size,
-        sum( (1-coalesce(s.null_frac, 0))
-          * coalesce(
-            CASE
-              WHEN t.typlen = -1 THEN s.avg_width + 4
-              WHEN t.typlen = -2 THEN s.avg_width + 1
-              ELSE t.typlen
-            END
-          , 1024)) AS tpl_data_size,
+          + CASE WHEN tbl.relhasoids THEN 4 ELSE 0 END AS tpl_hdr_size,
+        sum( (1-coalesce(s.null_frac, 0)) * coalesce(s.avg_width, 1024) ) AS tpl_data_size,
         max( CASE WHEN att.atttypid = 'pg_catalog.name'::regtype THEN 1 ELSE 0 END ) > 0 AS is_na
       FROM pg_attribute att
         JOIN pg_type AS t ON att.atttypid = t.oid
