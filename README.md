@@ -84,8 +84,8 @@ Alignment padding
 Unfortunately, as it is not possible to compute the space wasted by the 
 alignment paddings, it is always reported in the bloat fields. Sometime, this
 space can takes up to 10% or more of the table size. See the chapter "The 
-alignment deviation" [in this page](The alignment deviation) for more 
-information.
+alignment deviation" [from this page](http://blog.ioguix.net/postgresql/2014/09/10/Bloat-estimation-for-tables.html)
+for more information.
 
 This means you can estimate this space by running the query on non-bloated 
 table. The bloat fields will then only report this alignment padding space. For
