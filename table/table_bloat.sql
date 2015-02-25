@@ -40,7 +40,6 @@ FROM (
         sum( (1-coalesce(s.null_frac, 0)) * coalesce(s.avg_width, 1024) ) AS tpl_data_size,
         bool_or(att.atttypid = 'pg_catalog.name'::regtype) AS is_na
       FROM pg_attribute AS att
-        JOIN pg_type AS t ON att.atttypid = t.oid
         JOIN pg_class AS tbl ON att.attrelid = tbl.oid
         JOIN pg_namespace AS ns ON ns.oid = tbl.relnamespace
         JOIN pg_stats AS s ON s.schemaname=ns.nspname

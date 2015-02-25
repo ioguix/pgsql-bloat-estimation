@@ -35,12 +35,12 @@ FROM (
         current_setting('block_size')::numeric AS bs,
         CASE WHEN version()~'mingw32' OR version()~'64-bit|x86_64|ppc64|ia64|amd64' THEN 8 ELSE 4 END AS ma,
         24 AS page_hdr,
-        23 + CASE WHEN MAX(coalesce(null_frac,0)) > 0 THEN ( 7 + count(*) ) / 8 ELSE 0::int END
+        CASE WHEN current_setting('server_version_num')::integer < 80300 THEN 27 ELSE 23 END
+          + CASE WHEN MAX(coalesce(null_frac,0)) > 0 THEN ( 7 + count(*) ) / 8 ELSE 0::int END
           + CASE WHEN tbl.relhasoids THEN 4 ELSE 0 END AS tpl_hdr_size,
         sum( (1-coalesce(s.null_frac, 0)) * coalesce(s.avg_width, 1024) ) AS tpl_data_size,
         bool_or(att.atttypid = 'pg_catalog.name'::regtype) AS is_na
       FROM pg_attribute AS att
-        JOIN pg_type AS t ON att.atttypid = t.oid
         JOIN pg_class AS tbl ON att.attrelid = tbl.oid
         JOIN pg_namespace AS ns ON ns.oid = tbl.relnamespace
         JOIN pg_stats AS s ON s.schemaname=ns.nspname

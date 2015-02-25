@@ -32,12 +32,12 @@ FROM (
           THEN 24
           ELSE 20
         END AS page_hdr,
-        23 + CASE WHEN MAX(coalesce(null_frac,0)) > 0 THEN ( 7 + count(*) ) / 8 ELSE 0::int END
+        CASE WHEN cluster_version.v > 7 THEN 27 ELSE 23 END
+          + CASE WHEN MAX(coalesce(null_frac,0)) > 0 THEN ( 7 + count(*) ) / 8 ELSE 0::int END
           + CASE WHEN tbl.relhasoids THEN 4 ELSE 0 END AS tpl_hdr_size,
         sum( (1-coalesce(s.null_frac, 0)) * coalesce(s.avg_width, 1024) ) AS tpl_data_size,
         max( CASE WHEN att.atttypid = 'pg_catalog.name'::regtype THEN 1 ELSE 0 END ) > 0 AS is_na
       FROM pg_attribute att
-        JOIN pg_type AS t ON att.atttypid = t.oid
         JOIN pg_class tbl ON att.attrelid = tbl.oid
         JOIN pg_namespace ns ON ns.oid = tbl.relnamespace
         JOIN pg_stats s ON s.schemaname=ns.nspname
@@ -47,7 +47,7 @@ FROM (
         ( SELECT substring(current_setting('server_version') FROM '#"[0-9]+#"%' FOR '#')::integer ) AS cluster_version(v)
       WHERE att.attnum > 0 AND NOT att.attisdropped
         AND tbl.relkind = 'r'
-      GROUP BY 1,2,3,4,5,6,7,8,9,10, tbl.relhasoids
+      GROUP BY 1,2,3,4,5,6,7,8,9,10, cluster_version.v, tbl.relhasoids
       ORDER BY 2,3
     ) as s
   ) as s2
