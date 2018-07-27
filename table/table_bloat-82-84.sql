@@ -31,7 +31,7 @@ FROM (
         coalesce(toast.reltuples, 0) AS toasttuples,
         coalesce(substring(
           array_to_string(tbl.reloptions, ' ')
-          FROM '%fillfactor=#"__#"%' FOR '#')::smallint, 100) AS fillfactor,
+          FROM 'fillfactor=([0-9]+)')::smallint, 100) AS fillfactor,
         current_setting('block_size')::numeric AS bs,
         CASE WHEN version()~'mingw32' OR version()~'64-bit|x86_64|ppc64|ia64|amd64' THEN 8 ELSE 4 END AS ma,
         24 AS page_hdr,
