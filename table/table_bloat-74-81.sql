@@ -36,11 +36,12 @@ FROM (
           + CASE WHEN MAX(coalesce(null_frac,0)) > 0 THEN ( 7 + count(*) ) / 8 ELSE 0::int END
           + CASE WHEN tbl.relhasoids THEN 4 ELSE 0 END AS tpl_hdr_size,
         sum( (1-coalesce(s.null_frac, 0)) * coalesce(s.avg_width, 1024) ) AS tpl_data_size,
-        max( CASE WHEN att.atttypid = 'pg_catalog.name'::regtype THEN 1 ELSE 0 END ) > 0 AS is_na
+        max( CASE WHEN att.atttypid = 'pg_catalog.name'::regtype THEN 1 ELSE 0 END ) > 0
+          OR count(att.attname) <> count(s.attname) AS is_na
       FROM pg_attribute att
         JOIN pg_class tbl ON att.attrelid = tbl.oid
         JOIN pg_namespace ns ON ns.oid = tbl.relnamespace
-        JOIN pg_stats s ON s.schemaname=ns.nspname
+        LEFT JOIN pg_stats s ON s.schemaname=ns.nspname
           AND s.tablename = tbl.relname
           AND s.attname=att.attname
         LEFT JOIN pg_class toast ON tbl.reltoastrelid = toast.oid,
