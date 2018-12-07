@@ -4,7 +4,11 @@
 SELECT current_database(), nspname AS schemaname, tblname, idxname, bs*(relpages)::bigint AS real_size,
   bs*(relpages-est_pages)::bigint AS extra_size,
   100 * (relpages-est_pages)::float / relpages AS extra_ratio,
-  fillfactor, bs*(relpages-est_pages_ff) AS bloat_size,
+  fillfactor,
+  CASE WHEN relpages > est_pages_ff
+    THEN bs*(relpages-est_pages_ff)
+    ELSE 0
+  END AS bloat_size,
   100 * (relpages-est_pages_ff)::float / relpages AS bloat_ratio,
   is_na
   -- , 100-(sub.pst).avg_leaf_density, est_pages, index_tuple_hdr_bm, maxalign, pagehdr, nulldatawidth, nulldatahdrwidth, sub.reltuples, sub.relpages -- (DEBUG INFO)
