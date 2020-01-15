@@ -1,4 +1,4 @@
-/* WARNING: executed with a non-superuser role, the query inspect only tables you are granted to read.
+/* WARNING: executed with a non-superuser role, the query inspect only tables and materialized view (9.3+) you are granted to read.
 * This query is compatible with PostgreSQL 9.0 and more
 */
 SELECT current_database(), schemaname, tblname, bs*tblpages AS real_size,
@@ -52,7 +52,7 @@ FROM (
           AND s.tablename = tbl.relname AND s.inherited=false AND s.attname=att.attname
         LEFT JOIN pg_class AS toast ON tbl.reltoastrelid = toast.oid
       WHERE NOT att.attisdropped
-        AND tbl.relkind = 'r'
+        AND tbl.relkind in ('r','m')
       GROUP BY 1,2,3,4,5,6,7,8,9,10
       ORDER BY 2,3
     ) AS s
