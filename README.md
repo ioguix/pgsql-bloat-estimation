@@ -16,10 +16,16 @@ Three different kind of non used space should be considered:
     index to keep your rows. This should be mapped and under control by
     autovacuum and/or your vacuum maintenance procedure.
 
+ToC:
 
+* [Bloat in Tables](#bloat-in-tables)
+* [Bloat in btree indexes](bloat-in-btree-indexes)
+* [The ``is_na`` column](#the-is_na-column)
+* [Alignment padding](#alignment-padding)
+* [Size of tables/indexes](#size-of-tablesindexes)
 
-Tables
-------
+Bloat in Tables
+---------------
 
 The queries from the "table" folder estimate the bloat for tables. They expose
 these fields:
@@ -43,8 +49,8 @@ AS 7.4, 8.0 and 8.1 do not have fillfactor, ``extra_size``, ``extra_ratio``
 and ``bloat_size`` are not reported.
 
 
-BTree indexes
--------------
+Bloat in btree indexes
+----------------------
 
 The queries from the "btree" folder estimate the bloat for btree indexes. They
 expose these fields:
