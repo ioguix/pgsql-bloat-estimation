@@ -6,11 +6,11 @@ SELECT current_database(), schemaname, tblname, bs*tblpages AS real_size,
   CASE WHEN tblpages - est_tblpages > 0
     THEN 100 * (tblpages - est_tblpages)/tblpages::float
     ELSE 0
-  END AS extra_ratio, fillfactor, (tblpages-est_tblpages_ff)*bs AS bloat_size,
+  END AS extra_pct, fillfactor, (tblpages-est_tblpages_ff)*bs AS bloat_size,
   CASE WHEN tblpages - est_tblpages_ff > 0
     THEN 100 * (tblpages - est_tblpages_ff)/tblpages::float
     ELSE 0
-  END AS bloat_ratio, is_na
+  END AS bloat_pct, is_na
   -- , (pst).free_percent + (pst).dead_tuple_percent AS real_frag
 FROM (
   SELECT ceil( reltuples / ( (bs-page_hdr)/tpl_size ) ) + ceil( toasttuples / 4 ) AS est_tblpages,

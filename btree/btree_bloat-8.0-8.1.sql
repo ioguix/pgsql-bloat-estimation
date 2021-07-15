@@ -4,7 +4,7 @@
 SELECT current_database(), nspname AS schemaname, tblname, idxname, bs*(sub.relpages)::bigint AS real_size,
   bs*est_pages::bigint as estimated_size,
   bs*(sub.relpages-est_pages)::bigint AS bloat_size,
-  100 * (sub.relpages-est_pages)::float / sub.relpages AS bloat_ratio, is_na
+  100 * (sub.relpages-est_pages)::float / sub.relpages AS bloat_pct, is_na
   -- , est_pages, index_tuple_hdr_bm, maxalign, pagehdr, nulldatawidth, nulldatahdrwidth, sub.reltuples, sub.relpages -- (DEBUG INFO)
 FROM (
   SELECT bs, nspname, table_oid, tblname, idxname, relpages, coalesce(

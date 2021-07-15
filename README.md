@@ -37,15 +37,15 @@ these fields:
 * ``extra_size``: estimated extra size not used/needed in the table. This
   extra size is composed by the fillfactor, bloat and alignment padding
   spaces.
-* ``extra_ratio``: estimated ratio of the real size used by ``extra_size``.
+* ``extra_pct``: estimated percentage of the real size used by ``extra_size``.
 * ``fillfactor``: the fillfactor of the table.
 * ``bloat_size``: estimated size of the bloat without the extra space kept
   for the fillfactor.
-* ``bloat_ratio``: estimated ratio of the real size used by ``bloat_size``.
+* ``bloat_pct``: estimated percentage of the real size used by ``bloat_size``.
 * ``is_na``: is the estimation "Not Applicable" ? If true, do not trust the
   stats.
 
-AS 7.4, 8.0 and 8.1 do not have fillfactor, ``extra_size``, ``extra_ratio``
+AS 7.4, 8.0 and 8.1 do not have fillfactor, ``extra_size``, ``extra_pct``
 and ``bloat_size`` are not reported.
 
 
@@ -62,11 +62,11 @@ expose these fields:
 * ``extra_size``: estimated extra size not used/needed by the index. This
   extra size is composed by the fillfactor, bloat and alignment padding
   spaces.
-* ``extra_ratio``: estimated ratio of the real size used by ``extra_size``.
+* ``extra_pct``: estimated percentage of the real size used by ``extra_size``.
 * ``fillfactor``: the fillfactor of the index.
 * ``bloat_size``: estimated size of the bloat without the extra space kept
   for the fillfactor.
-* ``bloat_ratio``: estimated ratio of the real size used by ``bloat_size``.
+* ``bloat_pct``: estimated percentage of the real size used by ``bloat_size``.
 * ``is_na``: is the estimation "Not Applicable" ? If true, do not trust the
   stats.
 
@@ -124,7 +124,7 @@ space wasted by alignment padding from this table.
 
 ### Size of tables/indexes
 
-Small table or indexes (few pages) will certainly reports high bloat ratio.
+Small table or indexes (few pages) will certainly reports high bloat percentage.
 Each pages beeing 8kB, the less you have rows to fill them, the smaller they
 are, the more you will have natural spaces in there.
 

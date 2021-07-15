@@ -6,7 +6,7 @@ SELECT current_database(), schemaname, tblname, bs*tblpages AS real_size,
   CASE WHEN tblpages - est_num_pages > 0
     THEN 100 * (tblpages - est_num_pages)/tblpages::float
     ELSE 0
-  END AS bloat_ratio
+  END AS bloat_pct
 FROM (
   SELECT
     ceil( reltuples / ( (bs-page_hdr)/tpl_size ) ) + ceil( toasttuples / 4 ) AS est_num_pages, tblpages,

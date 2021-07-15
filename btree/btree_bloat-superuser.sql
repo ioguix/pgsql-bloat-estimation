@@ -5,13 +5,13 @@
 -- This query is compatible with PostgreSQL 8.2 and after.
 SELECT current_database(), nspname AS schemaname, tblname, idxname, bs*(relpages)::bigint AS real_size,
   bs*(relpages-est_pages)::bigint AS extra_size,
-  100 * (relpages-est_pages)::float / relpages AS extra_ratio,
+  100 * (relpages-est_pages)::float / relpages AS extra_pct,
   fillfactor,
   CASE WHEN relpages > est_pages_ff
     THEN bs*(relpages-est_pages_ff)
     ELSE 0
   END AS bloat_size,
-  100 * (relpages-est_pages_ff)::float / relpages AS bloat_ratio,
+  100 * (relpages-est_pages_ff)::float / relpages AS bloat_pct,
   is_na
   -- , 100-(pst).avg_leaf_density AS pst_avg_bloat, est_pages, index_tuple_hdr_bm, maxalign, pagehdr, nulldatawidth, nulldatahdrwidth, reltuples, relpages -- (DEBUG INFO)
 FROM (
