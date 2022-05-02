@@ -3,7 +3,7 @@
 */
 SELECT current_database(), schemaname, tblname, bs*tblpages AS real_size,
   (tblpages-est_tblpages)*bs AS extra_size,
-  CASE WHEN tblpages - est_tblpages > 0
+  CASE WHEN tblpages > 0 AND tblpages - est_tblpages > 0
     THEN 100 * (tblpages - est_tblpages)/tblpages::float
     ELSE 0
   END AS extra_pct, fillfactor,
@@ -11,7 +11,7 @@ SELECT current_database(), schemaname, tblname, bs*tblpages AS real_size,
     THEN (tblpages-est_tblpages_ff)*bs
     ELSE 0
   END AS bloat_size,
-  CASE WHEN tblpages - est_tblpages_ff > 0
+  CASE WHEN tblpages > 0 AND tblpages - est_tblpages_ff > 0
     THEN 100 * (tblpages - est_tblpages_ff)/tblpages::float
     ELSE 0
   END AS bloat_pct, is_na
