@@ -50,8 +50,8 @@ FROM (
               16 AS pageopqdata,
               /* per tuple header: add IndexAttributeBitMapData if some cols are null-able */
               CASE WHEN max(coalesce(s.stanullfrac,0)) = 0
-                  THEN 2 -- IndexTupleData size
-                  ELSE 2 + (( 32 + 8 - 1 ) / 8) -- IndexTupleData size + IndexAttributeBitMapData size ( max num filed per index + 8 - 1 /8)
+                  THEN 8 -- IndexTupleData size
+                  ELSE 8 + (( 32 + 8 - 1 ) / 8) -- IndexTupleData size + IndexAttributeBitMapData size ( max num filed per index + 8 - 1 /8)
               END AS index_tuple_hdr_bm,
               /* data len: we remove null values save space using it fractionnal part from stats */
               sum( (1-coalesce(s.stanullfrac, 0)) * coalesce(s.stawidth, 1024)) AS nulldatawidth,
