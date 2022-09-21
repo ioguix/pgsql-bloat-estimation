@@ -52,11 +52,16 @@ FROM (
                   ELSE 8 + (( 32 + 8 - 1 ) / 8) -- IndexTupleData size + IndexAttributeBitMapData size ( max num filed per index + 8 - 1 /8)
               END AS index_tuple_hdr_bm,
               /* data len: we remove null values save space using it fractionnal part from stats */
-              sum( (1-coalesce(s.null_frac, 0)) * coalesce(s.avg_width, 1024)) AS nulldatawidth,
+              sum(
+                coalesce(s.avg_width, 1024)
+                *
+                (CASE WHEN nulls_indexed THEN (1 - coalesce(s.null_frac, 0)) ELSE 1 END)
+              ) AS nulldatawidth,
               max( CASE WHEN i.atttypid = 'pg_catalog.name'::regtype THEN 1 ELSE 0 END ) > 0 AS is_na
           FROM (
               SELECT ct.relname AS tblname, ct.relnamespace, ic.idxname, ic.attpos, ic.indkey, ic.indkey[ic.attpos], ic.reltuples, ic.relpages, ic.tbloid, ic.idxoid, ic.fillfactor,
                   coalesce(a1.attnum, a2.attnum) AS attnum, coalesce(a1.attname, a2.attname) AS attname, coalesce(a1.atttypid, a2.atttypid) AS atttypid,
+                  indexdef NOT LIKE '%' || coalesce(a1.attname, a2.attname) || ' IS NOT NULL%' AS nulls_indexed,
                   CASE WHEN a1.attnum IS NULL
                   THEN ic.idxname
                   ELSE ct.relname
@@ -88,6 +93,7 @@ FROM (
                   ic.indkey[ic.attpos] = 0
                   AND a2.attrelid = ic.idxoid
                   AND a2.attnum = ic.attpos
+              LEFT JOIN pg_indexes ON indexname = idxname
             ) i
             JOIN pg_catalog.pg_namespace n ON n.oid = i.relnamespace
             JOIN pg_catalog.pg_stats s ON s.schemaname = n.nspname
